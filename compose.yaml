@@ -1,0 +1,44 @@
+services:
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/config.d/:/etc/nginx/conf.d/
+    ports:
+      - "8080:80"
+    container_name: nginx
+    networks:
+      - laravel-development
+    depends_on:
+      php-fpm:
+        condition: service_started
+  php-fpm:
+    build:
+      context: .
+      dockerfile: docker/php-fpm/Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./:/var/www
+    container_name: php-fpm
+    user: "1000:1000"
+    networks:
+      - laravel-development
+    depends_on:
+      postgres:
+        condition: service_started
+  postgres:
+    image: postgres:16
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=weather_api_application
+      - POSTGRES_USER=laravel
+      - POSTGRES_PASSWORD=secret
+    volumes:
+      - ./postgres-data-development:/var/lib/postgresql/data
+    networks:
+      - laravel-development
+
+networks:
+  laravel-development:
