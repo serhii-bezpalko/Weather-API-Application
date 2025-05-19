@@ -25,7 +25,7 @@ DB_PASSWORD=secret
 ```
 3. Start the containers
 ```shell
-docker-compose up --build -d
+docker compose up --build -d
 ```
 4. Run migrations
 Once containers are up:
