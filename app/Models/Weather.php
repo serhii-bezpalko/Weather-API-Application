@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use http\Env\Request;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
@@ -19,26 +18,26 @@ class Weather extends Model
     {
         $apikey = env('WEATHER_API_KEY');
         $response = Http::get("http://api.weatherapi.com/v1/current.json?key={$apikey}&q={$city_name}&aqi=no")->json();
-
         if (key_exists('error', $response)) {
+            if ($response['error']['message'] === 'No matching location found.') {
+                return response()->json(['error' => 'City not found'], 404);
+            }
             return response()->json(['error' => 'Invalid request'], 400);
         }
 
-        $data = json_decode($response, true)['current'];
-        $data['city'] = json_decode($response, true)['location']['name'];
-
-        if ($data['city'] !== $city_name) {
+        if ($response['location']['name'] !== $city_name) {
             return response()->json(['error' => 'City not found'], 404);
         }
 
         $data = [
-            'city' => $data['city'],
-            'temperature' => (int)$data['temp_c'],
-            'humidity' => $data['humidity'],
-            'description' => $data['condition']['text'],
+            'city' => $response['location']['name'],
+            'temperature' => (int)$response['current']['temp_c'],
+            'humidity' => $response['current']['humidity'],
+            'description' => $response['current']['condition']['text'],
         ];
 
         Weather::create($data);
-        return response()->json(['message' => 'created']);
+        unset($data['city']);
+        return response()->json($data);
     }
 }
